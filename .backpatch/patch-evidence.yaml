@@ -1,6 +1,6 @@
 schema: osera-patch-evidence/0.1.0
 producer: moderne
-release: 2.2.28.Final-backpatch-00002
+release: 2.2.28.Final-backpatch-00003
 baseline: v2.2.28.Final+backpatch.baseline
 fixes:
   - cve: CVE-2023-1973
@@ -19,12 +19,20 @@ fixes:
     basis: adapted
     artifacts:
       - io.undertow:undertow-core
-    note: New in this release; ported onto 2.2.28.Final; fixed at 2.2.28.Final-backpatch-00002 (backpatch-undertow@3361c74).
+    note: Carried from 2.2.28.Final-backpatch-00002; ported onto 2.2.28.Final; fixed at 2.2.28.Final-backpatch-00002 (backpatch-undertow@3361c74).
+  - cve: CVE-2024-1635
+    upstream_fix_url: https://github.com/undertow-io/undertow/commit/e824766df3b9d9614eff7700159e3aac5a35a1b8
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2024-1635
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-undertow/compare/2280f16~1...1b364ce
+    basis: adapted
+    artifacts:
+      - io.undertow:undertow-core
+    note: New in this release; ported onto 2.2.28.Final; fixed at 2.2.28.Final-backpatch-00003 (backpatch-undertow@2280f16..1b364ce).
 tests:
-  commit: 3361c742529ece1fdb1b14cb1c2d393cfaa3d943
+  commit: 1b364ce09a90dcf825265586f642445712d1f7f2
   command: mvn -B -T1 -pl core,servlet -am -Dossindex.skip=true -Dmaven.test.failure.ignore=true clean test
   runtime: openjdk version 1.8.0_382, Apache Maven 3.9.16
-  report: undertow-core-2.2.28.Final-backpatch-00002-tests.zip
-  report_sha256: 7fb6970beb78320ca2fa686395f9e6f88a431466eceec5ceb1f364fae39e524a
+  report: undertow-core-2.2.28.Final-backpatch-00003-tests.zip
+  report_sha256: 14624c6d8e865b1895bdace83778909560bc793d7e834c2aba465c52f3832e85
   result: pass
-  note: "1095 tests at the patch commit, 14 of them skipped by the suite, 0 failed, 0 errors. Accepted verifier finding C (classes changed without a changed source): they are generated or inlined, never edited: the HTTP request and response parsers the build generates (HttpRequestParser$$generated, HttpResponseParser$$generated, which differ between two builds of one commit), classes that inline a changed class's constants, and JBoss Logging's generated loggers (UndertowLogger_$logger); benign by reading. The regression tests are upstream's."
+  note: "1096 tests at the patch commit, 14 of them skipped by the suite, 0 failed, 0 errors. Accepted verifier finding C (classes changed without a changed source): they are generated or inlined, never edited: the HTTP request and response parsers the build generates (HttpRequestParser$$generated, HttpResponseParser$$generated, which differ between two builds of one commit), classes that inline a changed class's constants, and JBoss Logging's generated loggers (UndertowLogger_$logger); benign by reading. Regression tests written for this port (ours; upstream ships none with its fix): WriteTimeoutStreamSinkConduitCloseTestCase."
