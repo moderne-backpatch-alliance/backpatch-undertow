@@ -1,6 +1,6 @@
 schema: osera-patch-evidence/0.1.0
 producer: moderne
-release: 2.2.28.Final-backpatch-00003
+release: 2.2.28.Final-backpatch-00004
 baseline: v2.2.28.Final+backpatch.baseline
 fixes:
   - cve: CVE-2023-1973
@@ -27,12 +27,28 @@ fixes:
     basis: adapted
     artifacts:
       - io.undertow:undertow-core
-    note: New in this release; ported onto 2.2.28.Final; fixed at 2.2.28.Final-backpatch-00003 (backpatch-undertow@2280f16..1b364ce).
+    note: Carried from 2.2.28.Final-backpatch-00003; ported onto 2.2.28.Final; fixed at 2.2.28.Final-backpatch-00003 (backpatch-undertow@2280f16..1b364ce).
+  - cve: CVE-2024-3884
+    upstream_fix_url: https://github.com/advisories/GHSA-6h4f-pj3g-q8fq
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2024-3884
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-undertow/compare/713dc52~1...6b52afd
+    basis: adapted
+    artifacts:
+      - io.undertow:undertow-core
+    note: New in this release; ported onto 2.2.28.Final; fixed at 2.2.28.Final-backpatch-00004 (backpatch-undertow@713dc52..6b52afd).
+  - cve: CVE-2024-4027
+    upstream_fix_url: https://github.com/advisories/GHSA-33hj-rcmx-86mv
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2024-4027
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-undertow/compare/713dc52~1...6b52afd
+    basis: adapted
+    artifacts:
+      - io.undertow:undertow-core
+    note: New in this release; ported onto 2.2.28.Final; fixed at 2.2.28.Final-backpatch-00004 (backpatch-undertow@713dc52..6b52afd).
 tests:
-  commit: 1b364ce09a90dcf825265586f642445712d1f7f2
+  commit: 6b52afdcd15a9581e9b2c162f5343569dd60132b
   command: mvn -B -T1 -pl core,servlet -am -Dossindex.skip=true -Dmaven.test.failure.ignore=true clean test
   runtime: openjdk version 1.8.0_382, Apache Maven 3.9.16
-  report: undertow-core-2.2.28.Final-backpatch-00003-tests.zip
-  report_sha256: 14624c6d8e865b1895bdace83778909560bc793d7e834c2aba465c52f3832e85
+  report: undertow-core-2.2.28.Final-backpatch-00004-tests.zip
+  report_sha256: 5a8bd8b93feab9990c6080b72bfb5445e7bce738b911270a5222e33c768778e7
   result: pass
-  note: "1096 tests at the patch commit, 14 of them skipped by the suite, 0 failed, 0 errors. Accepted verifier finding C (classes changed without a changed source): they are generated or inlined, never edited: the HTTP request and response parsers the build generates (HttpRequestParser$$generated, HttpResponseParser$$generated, which differ between two builds of one commit), classes that inline a changed class's constants, and JBoss Logging's generated loggers (UndertowLogger_$logger); benign by reading. Regression tests written for this port (ours; upstream ships none with its fix): WriteTimeoutStreamSinkConduitCloseTestCase."
+  note: "1098 tests at the patch commit, 14 of them skipped by the suite, 0 failed, 0 errors. Not in this report: core/src/test/java/io/undertow/testutils/DefaultServer.java (the JUnit runner the other tests run under, not a test class itself). Accepted verifier finding C (classes changed without a changed source): they are generated or inlined, never edited: the HTTP request and response parsers the build generates (HttpRequestParser$$generated, HttpResponseParser$$generated, which differ between two builds of one commit), classes that inline a changed class's constants, and JBoss Logging's generated loggers (UndertowLogger_$logger); benign by reading. Regression tests written for this port (ours; upstream ships none with its fix): DefaultEntitySizeLimitTestCase, with a test-support change to DefaultServer so the listeners get the Undertow options SimpleBlockingServerTestCase sets."
