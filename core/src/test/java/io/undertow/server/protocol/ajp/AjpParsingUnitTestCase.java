@@ -23,8 +23,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -175,6 +182,53 @@ public class AjpParsingUnitTestCase {
         assertPathParamValue(paramsMap, "path3", "param3");
         assertPathParamValue(paramsMap, "path4", "param4");
         assertPathParamValue(paramsMap, "path5", "param5");
+    }
+
+    @Test
+    public void testConcurrentUrlDecoding() throws Exception {
+        final AjpRequestParser parser = new AjpRequestParser("UTF-8", true, 100, 100, false, true);
+        final int threads = 8;
+        final int iterations = 5000;
+        final CountDownLatch start = new CountDownLatch(1);
+        final ExecutorService executor = Executors.newFixedThreadPool(threads);
+        try {
+            final List<Future<String>> results = new ArrayList<>();
+            for (int t = 0; t < threads; ++t) {
+                final char c = (char) ('a' + t);
+                results.add(executor.submit(new Callable<String>() {
+                    @Override
+                    public String call() throws Exception {
+                        final StringBuilder encoded = new StringBuilder("/");
+                        final StringBuilder expected = new StringBuilder("/");
+                        for (int i = 0; i < 64; ++i) {
+                            encoded.append(c).append("%20");
+                            expected.append(c).append(' ');
+                        }
+                        final byte[] path = encoded.toString().getBytes(StandardCharsets.UTF_8);
+                        start.await();
+                        for (int i = 0; i < iterations; ++i) {
+                            HttpServerExchange result = new HttpServerExchange(null);
+                            AjpRequestParseState state = new AjpRequestParseState();
+                            try {
+                                parser.parse(createAjpRequest(path, "a=b".getBytes(StandardCharsets.UTF_8)), state, result);
+                            } catch (RuntimeException e) {
+                                return "iteration " + i + ": " + e;
+                            }
+                            if (state.badRequest || !expected.toString().equals(result.getRequestPath())) {
+                                return "iteration " + i + ": got " + result.getRequestPath();
+                            }
+                        }
+                        return null;
+                    }
+                }));
+            }
+            start.countDown();
+            for (Future<String> f : results) {
+                Assert.assertNull(f.get());
+            }
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     private void assertPathParamValue(Map<String, Deque<String>> pathParams, String pathParam, String pathParamValue) {
