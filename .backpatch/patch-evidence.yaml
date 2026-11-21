@@ -1,0 +1,22 @@
+schema: osera-patch-evidence/0.1.0
+producer: moderne
+release: 2.2.28.Final-backpatch-00001
+baseline: v2.2.28.Final+backpatch.baseline
+fixes:
+  - cve: CVE-2023-1973
+    upstream_fix_url: https://github.com/advisories/GHSA-97cq-f4jm-mv8h
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2023-1973
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-undertow/compare/c5034b2~1...0663770
+    basis: adapted
+    artifacts:
+      - io.undertow:undertow-core
+      - io.undertow:undertow-servlet
+    note: New in this release; ported onto 2.2.28.Final; fixed at 2.2.28.Final-backpatch-00001 (backpatch-undertow@c5034b2..0663770).
+tests:
+  commit: 0663770c6dc50f7ace9e0fa342d2a5c64d4ac56c
+  command: mvn -B -T1 -pl core,servlet -am -Dossindex.skip=true -Dmaven.test.failure.ignore=true clean test
+  runtime: openjdk version 1.8.0_382, Apache Maven 3.9.16
+  report: undertow-core-2.2.28.Final-backpatch-00001-tests.zip
+  report_sha256: 109fe140401a85eb653e65e8a2b8ac75681ed455cea5cbe98c3ef2b7d9752788
+  result: pass
+  note: "1094 tests at the patch commit, 14 of them skipped by the suite, 0 failed, 0 errors. Accepted verifier finding C (classes changed without a changed source): they are generated or inlined, never edited: the HTTP request and response parsers the build generates (HttpRequestParser$$generated, HttpResponseParser$$generated, which differ between two builds of one commit), classes that inline a changed class's constants, and JBoss Logging's generated loggers (UndertowLogger_$logger); benign by reading. Regression tests written for this port (ours; upstream ships none with its fix): FormAuthSessionTimeoutTestCase and ServletFormAuthSessionTimeoutTestCase."
