@@ -159,9 +159,13 @@ public class Http2Channel extends AbstractFramedChannel<Http2Channel, AbstractHt
     // the time window for counting rst frames received
     private final long rstFramesTimeWindow;
     // the time in milliseconds the last rst frame was received
-    private long lastRstFrameMillis = System.currentTimeMillis();
-    // the total number of received rst frames during current  time windows
+    private long lastReceivedRstFrameMillis = System.currentTimeMillis();
+    // the time in milliseconds the last rst frame was sent
+    private long lastSentRstFrameMillis = System.currentTimeMillis();
+    // the total number of received rst frames during current time windows
     private int receivedRstFramesPerWindow;
+    // the total number of sent rst frames during current time windows
+    private int sentRstFramesPerWindow;
 
 
     private static final AtomicIntegerFieldUpdater<Http2Channel> sendConcurrentStreamsAtomicUpdater = AtomicIntegerFieldUpdater.newUpdater(
@@ -1146,11 +1150,14 @@ public class Http2Channel extends AbstractFramedChannel<Http2Channel, AbstractHt
             return;
         }
         sentRstStreams.store(streamId, handleRstStream(streamId, false));
-        if(UndertowLogger.REQUEST_IO_LOGGER.isDebugEnabled()) {
-            UndertowLogger.REQUEST_IO_LOGGER.debugf(new ClosedChannelException(), "Sending rststream on channel %s stream %s", this, streamId);
+        if (!this.isThisGoneAway()) {
+            if (UndertowLogger.REQUEST_IO_LOGGER.isDebugEnabled()) {
+                UndertowLogger.REQUEST_IO_LOGGER.debugf(new ClosedChannelException(),
+                        "Sending rststream on channel %s stream %s", this, streamId);
+            }
+            Http2RstStreamSinkChannel channel = new Http2RstStreamSinkChannel(this, streamId, statusCode);
+            flushChannelIgnoreFailure(channel);
         }
-        Http2RstStreamSinkChannel channel = new Http2RstStreamSinkChannel(this, streamId, statusCode);
-        flushChannelIgnoreFailure(channel);
     }
 
     private StreamHolder handleRstStream(int streamId, boolean receivedRst) {
@@ -1168,22 +1175,50 @@ public class Http2Channel extends AbstractFramedChannel<Http2Channel, AbstractHt
                 holder.sourceChannel.rstStream();
             }
             if (receivedRst) {
-                long currentTimeMillis = System.currentTimeMillis();
-                // reset the window tracking
-                if (currentTimeMillis - lastRstFrameMillis >= rstFramesTimeWindow) {
-                    lastRstFrameMillis = currentTimeMillis;
-                    receivedRstFramesPerWindow = 1;
-                } else {
-                    //
-                    receivedRstFramesPerWindow ++;
-                    if (receivedRstFramesPerWindow > maxRstFramesPerWindow) {
-                        sendGoAway(Http2Channel.ERROR_ENHANCE_YOUR_CALM);
-                        UndertowLogger.REQUEST_IO_LOGGER.debugf("Reached maximum number of rst frames %s during %s ms, sending GO_AWAY 11", maxRstFramesPerWindow, rstFramesTimeWindow);
-                    }
-                }
+                trackReceivedRstWindow();
             }
+            else {
+                trackSentRstWindow();
+            }
+        } else if (!receivedRst) {
+            trackSentRstWindow();
         }
         return holder;
+    }
+
+    private void trackReceivedRstWindow() {
+        long currentTimeMillis = System.currentTimeMillis();
+        // reset the window tracking
+        if (currentTimeMillis - lastReceivedRstFrameMillis >= rstFramesTimeWindow) {
+            lastReceivedRstFrameMillis = currentTimeMillis;
+            receivedRstFramesPerWindow = 1;
+        } else {
+            receivedRstFramesPerWindow++;
+            if (receivedRstFramesPerWindow > maxRstFramesPerWindow) {
+                sendGoAway(Http2Channel.ERROR_ENHANCE_YOUR_CALM);
+                UndertowLogger.REQUEST_IO_LOGGER.debugf(
+                        "Reached maximum number of rst frames %s during %s ms, sending GO_AWAY 11",
+                        maxRstFramesPerWindow, rstFramesTimeWindow);
+            }
+        }
+    }
+
+    private void trackSentRstWindow() {
+        long currentTimeMillis = System.currentTimeMillis();
+        // reset the window tracking
+        if (currentTimeMillis - lastSentRstFrameMillis >= rstFramesTimeWindow) {
+            lastSentRstFrameMillis = currentTimeMillis;
+            sentRstFramesPerWindow = 1;
+        } else {
+            sentRstFramesPerWindow++;
+            if (sentRstFramesPerWindow > maxRstFramesPerWindow) {
+                sendGoAway(Http2Channel.ERROR_ENHANCE_YOUR_CALM);
+                UndertowLogger.REQUEST_IO_LOGGER.debugf(
+                        "Reached maximum number of sent rst frames %s during %s ms, sending GO_AWAY 11",
+                        maxRstFramesPerWindow, rstFramesTimeWindow);
+                IoUtils.safeClose(this);
+            }
+        }
     }
 
     /**
