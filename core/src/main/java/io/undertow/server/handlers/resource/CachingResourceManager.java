@@ -32,6 +32,14 @@ import io.undertow.server.handlers.cache.LRUCache;
 public class CachingResourceManager implements ResourceManager {
 
     /**
+     * Max age 0, indicating that entries expire upon creation and are not retained;
+     */
+    public static final int MAX_AGE_NO_CACHING = LRUCache.MAX_AGE_NO_CACHING;
+    /**
+     * Mage age -1, this force manager to retain entries until underlying resource manager indicate that entries expired/changed
+     */
+    public static final int MAX_AGE_NO_EXPIRY = LRUCache.MAX_AGE_NO_EXPIRY;
+    /**
      * The biggest file size we cache
      */
     private final long maxFileSize;

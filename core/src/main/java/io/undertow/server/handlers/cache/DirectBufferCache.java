@@ -47,6 +47,14 @@ import org.xnio.BufferAllocator;
  */
 public class DirectBufferCache {
     private static final int SAMPLE_INTERVAL = 5;
+    /**
+     * Max age 0, indicating that entries expire upon creation and are not retained;
+     */
+    public static final int MAX_AGE_NO_CACHING = 0;
+    /**
+     * Mage age -1, entries dont expire
+     */
+    public static final int MAX_AGE_NO_EXPIRY = -1;
 
     private final LimitedBufferSlicePool pool;
     private final ConcurrentMap<Object, CacheEntry> cache;
